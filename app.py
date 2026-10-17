@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from flask import Flask, request, jsonify, render_template, session
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_naturgy_2026'
@@ -11,13 +12,81 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Base de datos de usuarios (USERS.txt)
+# Base de datos de usuarios segura (sin contraseñas explícitas en el código)
 USUARIOS = {
-    "kparra": {"password": "admin2026", "rol": "lider", "equipo": "TODOS"},
-    "lherrera": {"password": "admin2026", "rol": "lider", "equipo": "TODOS"},
-    "operador_bancau": {"password": "BanCau2026*", "rol": "operador", "equipo": "NATURGY BAN CAU"},
-    "operador_noacau": {"password": "NoaCau2026*", "rol": "operador", "equipo": "NATURGY NOA CAU"},
-    "operador_sanjuan": {"password": "SanJuan2026*", "rol": "operador", "equipo": "NATURGY ENERGIA SAN JUAN"}
+    # --- LÍDERES (Gestión total) ---
+    "kparra": {
+        "password": os.environ.get('PASS_KPARRA'),
+        "rol": "lider",
+        "equipo": "TODOS"
+    },
+    "lherrera": {
+        "password": os.environ.get('PASS_LHERRERA'),
+        "rol": "lider",
+        "equipo": "TODOS"
+    },
+
+    # --- ASESORES (Solo lectura) ---
+    "mquintana": {
+        "password": os.environ.get('PASS_MQUINTANA'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "aescobar": {
+        "password": os.environ.get('PASS_AESCOBAR'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "lganino": {
+        "password": os.environ.get('PASS_LGANINO'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "aherbas": {
+        "password": os.environ.get('PASS_AHERBAS'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "frios": {
+        "password": os.environ.get('PASS_FRIOS'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "carce": {
+        "password": os.environ.get('PASS_CARCE'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "arios": {
+        "password": os.environ.get('PASS_ARIOS'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "fruiz": {
+        "password": os.environ.get('PASS_FRUIZ'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "vgarcia": {
+        "password": os.environ.get('PASS_VGARCIA'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "nbogado": {
+        "password": os.environ.get('PASS_NBOGADO'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "vgonzalez": {
+        "password": os.environ.get('PASS_VGONZALEZ'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    },
+    "sgonzalez": {
+        "password": os.environ.get('PASS_SGONZALEZ'),
+        "rol": "asesor",
+        "equipo": "RAC"
+    }
 }
 
 def clean_str(val):
