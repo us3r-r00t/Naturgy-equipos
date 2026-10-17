@@ -164,27 +164,147 @@
                 </div>
             </div>
 
-            <!-- PESTAÑA 5: CALIDAD -->
-            <div id="tab-calidad" class="tab-content">
-                <div class="panel-box">
-                    <div class="panel-header-filter">
-                        <h3>🎯 Control y Evaluaciones de Calidad</h3>
-                        <div class="filter-group">
-                            <label for="select-mes-calidad"><strong>Mes:</strong></label>
-                            <select id="select-mes-calidad" class="select-mes" onchange="cambiarMes('calidad', this.value)">
-                                <option value="2026-10" selected>Octubre 2026</option>
-                                <option value="2026-11">Noviembre 2026</option>
-                                <option value="2026-12">Diciembre 2026</option>
-                                <option value="2027-01">Enero 2027</option>
-                                <option value="2027-02">Febrero 2027</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="placeholder-box">
-                        <p>Módulo de Calidad listo para consultar evaluaciones del periodo seleccionado.</p>
-                    </div>
+<!-- PESTAÑA 5: CALIDAD -->
+<div id="tab-calidad" class="tab-content">
+    <div class="panel-box">
+        <div class="panel-header-filter">
+            <h3>🎯 Control y Evaluaciones de Calidad</h3>
+            <div class="filter-group">
+                <label for="select-mes-calidad"><strong>Mes:</strong></label>
+                <select id="select-mes-calidad" class="select-mes" onchange="cambiarMes('calidad', this.value)">
+                    <option value="2026-10" selected>Octubre 2026</option>
+                    <option value="2026-11">Noviembre 2026</option>
+                    <option value="2026-12">Diciembre 2026</option>
+                    <option value="2027-01">Enero 2027</option>
+                    <option value="2027-02">Febrero 2027</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Sub-navegación interna de Calidad -->
+        <div class="subtabs-nav">
+            <button class="subtab-btn active" onclick="cambiarSubpestanaCalidad('glosario', event)">📖 Glosario</button>
+            <button class="subtab-btn" onclick="cambiarSubpestanaCalidad('resumen', event)">📊 Planilla Resumen</button>
+            <button class="subtab-btn" onclick="cambiarSubpestanaCalidad('detalle', event)">📋 Planilla Detalle</button>
+        </div>
+
+        <!-- SUB-PESTAÑA 1: GLOSARIO (ATRIBUTOS DEL 1 AL 10) -->
+<div id="subtab-calidad-glosario" class="subtab-content active">
+    <div class="glosario-container">
+        
+        <!-- Atributo 1 -->
+        <div class="glosario-card">
+            <div class="glosario-num">1</div>
+            <div class="glosario-info">
+                <h4>Frases de Cortesía (Saludo Inicial y Despedida) - Derivación Correcta</h4>
+                <p><strong>Criterio:</strong> Utiliza frases de cortesía al iniciar y terminar el contacto telefónico (Saludo Inicial y Despedida). Detectar el motivo del llamado (si corresponde a CAU o Comercial) y realiza la derivación si corresponde.</p>
+                <div class="glosario-alerta">
+                    ⚠️ <strong>Penalización / Baja de puntaje:</strong> No cumplir con el saludo y la presentación. Responder al cliente después de los 5 segundos. Cuando la despedida no es cordial.
                 </div>
             </div>
+        </div>
+
+        <!-- Atributo 2 -->
+        <div class="glosario-card">
+            <div class="glosario-num">2</div>
+            <div class="glosario-info">
+                <h4>Escucha Activa - Manejo de la Conversación - Rapidez en la Respuesta</h4>
+                <p><strong>Criterio:</strong> Se evalúa que el asesor responda la consulta al cliente asegurando una respuesta rápida. También se tiene en cuenta que no hable sobre el cliente; debe permitir que se exprese sin perder la conducción del llamado.</p>
+            </div>
+        </div>
+
+        <!-- Atributo 3 -->
+        <div class="glosario-card">
+            <div class="glosario-num">3</div>
+            <div class="glosario-info">
+                <h4>Detecta claramente la necesidad del cliente (Sondeo)</h4>
+                <p><strong>Criterio:</strong> Se evalúa que el operador realice las preguntas necesarias para comprender la consulta del cliente. Que repregunte y repita para asegurarse de que comprende la consulta.</p>
+            </div>
+        </div>
+
+        <!-- Atributo 4 -->
+        <div class="glosario-card">
+            <div class="glosario-num">4</div>
+            <div class="glosario-info">
+                <h4>Lenguaje claro y preciso - Profesionalismo - Tratamiento de la Espera</h4>
+                <p><strong>Criterio:</strong> Se evalúa la utilización de un lenguaje formal, tono y ritmo adecuado de la conversación. Buena dicción. Sonrisa telefónica. Evitar el uso de muletillas. Emplear palabras correctas manteniendo siempre el respeto hacia el cliente.</p>
+                <p><strong>Tratamiento de la Espera:</strong> Informar al cliente que se lo va a dejar en espera y agradecer el tiempo de espera al retomar.</p>
+            </div>
+        </div>
+
+        <!-- Atributo 5 -->
+        <div class="glosario-card">
+            <div class="glosario-num">5</div>
+            <div class="glosario-info">
+                <h4>Demuestra una Actitud Empática - Soporte Emocional</h4>
+                <p><strong>Criterio:</strong> El operador comprende las emociones del cliente; ante un estado de alteración del mismo, busca la contención generando empatía. Utiliza frases de cortesía (ej.: <em>"lo comprendo"</em>, <em>"comprendo su situación"</em>, <em>"le agradezco"</em>, <em>"muchas gracias"</em>, <em>"por favor"</em>). Personalizar con el cliente (al menos dos veces durante la llamada).</p>
+            </div>
+        </div>
+
+        <!-- Atributo 6 -->
+        <div class="glosario-card">
+            <div class="glosario-num">6</div>
+            <div class="glosario-info">
+                <h4>Responde al requerimiento del cliente con solvencia y seguridad (Información) - Protocolo de Emergencia</h4>
+                <p><strong>Criterio:</strong> Evaluamos que se brinde información correcta, completa y veraz: procedimientos, periodos, facturas, valores, gestiones, etc. También, se evalúa la adherencia del operador a los procedimientos y protocolos establecidos para situaciones de emergencia.</p>
+            </div>
+        </div>
+
+        <!-- Atributo 7 -->
+        <div class="glosario-card">
+            <div class="glosario-num">7</div>
+            <div class="glosario-info">
+                <h4>Tipificación correcta del reclamo - Carga de datos precisos - Observaciones</h4>
+                <p><strong>Criterio:</strong> Evaluamos que se tipifique la llamada de manera correcta y se registren los comentarios completos: Nombre, Apellido, DNI de la persona que se comunica, Vínculo con el TT, desde cuándo ocupa la vivienda, la consulta realizada y la respuesta brindada. En caso de RECLAMO debe registrarse el N° y los teléfonos del cliente.</p>
+            </div>
+        </div>
+
+        <!-- Atributo 8 -->
+        <div class="glosario-card">
+            <div class="glosario-num">8</div>
+            <div class="glosario-info">
+                <h4>Intima al cambio de Titularidad / Promocionar OV y Factura por mail</h4>
+                <p><strong>Criterio:</strong> Evaluamos que se IDENTIFIQUE AL CONTACTO; en caso de no ser el titular, se lo debe intimar a que realice el CAMBIO DE TITULARIDAD. Aplica para TT fallecido, familiares que ocupen vivienda, inquilinos, nuevos propietarios, etc. Se debe promocionar OV y Factura por mail.</p>
+            </div>
+        </div>
+
+        <!-- Atributo 9 -->
+        <div class="glosario-card">
+            <div class="glosario-num">9</div>
+            <div class="glosario-info">
+                <h4>Validación de Datos (Titular, Dirección completa, teléfono del reclamante)</h4>
+                <p><strong>Criterio:</strong> Evaluamos que se realice la Validación de datos completa y correcta: Nombre y Apellido, Vínculo con el titular, DNI, Dirección (calle, numeración, casa o depto., piso), Teléfonos (de contacto, particular, celular), Correo electrónico. El operador mantiene la confidencialidad de datos del cliente (bajo ningún concepto se deben brindar datos que figuren en el sistema).</p>
+            </div>
+        </div>
+
+        <!-- Atributo 10 -->
+        <div class="glosario-card">
+            <div class="glosario-num">10</div>
+            <div class="glosario-info">
+                <h4>Resolución efectiva del caso</h4>
+                <p><strong>Criterio:</strong> Consideramos la resolución del llamado y el contexto general de la comunicación. Se evalúa la habilidad del operador para detectar rápidamente la gravedad de la situación y tomar decisiones adecuadas sobre la prioridad de la respuesta. Se tiene en cuenta si se resolvió la consulta en tiempo y forma. Asimismo, el asesor debe evitar que el cliente vuelva a comunicarse, para ello debe agotar todos los recursos que sean necesarios. Cuando el asesor entienda que la llamada será extensa (el cliente realiza varias consultas, hay demora para otorgar reclamos, etc.), deberá gestionar un llamado saliente.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+        <!-- SUB-PESTAÑA 2: PLANILLA RESUMEN -->
+        <div id="subtab-calidad-resumen" class="subtab-content">
+            <div class="placeholder-box">
+                <p>📊 <strong>Planilla Resumen de Calidad por Asesor:</strong> Promedios generales, cumplimiento por atributo y porcentajes del periodo seleccionado.</p>
+            </div>
+        </div>
+
+        <!-- SUB-PESTAÑA 3: PLANILLA DETALLE -->
+        <div id="subtab-calidad-detalle" class="subtab-content">
+            <div class="placeholder-box">
+                <p>📋 <strong>Planilla Detalle de Evaluaciones:</strong> Auditorías telefónicas desglosadas por fecha, hora, asesor y nota de cada atributo.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
 
             <!-- PESTAÑA 6: MÉTRICAS -->
             <div id="tab-metricas" class="tab-content">
