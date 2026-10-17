@@ -1,7 +1,7 @@
 import os
-import pandas as pd
 import re
-from flask import Flask, render_template, request, jsonify, session
+import pandas as pd
+from flask import Flask, request, jsonify, render_template, session
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -26,7 +26,9 @@ def clean_str(val):
     return str(val).strip()
 
 def procesar_archivo_reporte(filepath):
-    ext = os.path.splitext(filepath)[1].lower()
+    # CORREGIDO: Garantizar obtención de la extensión como cadena de texto
+    split_res = os.path.splitext(filepath)
+    ext = str(split_res[1]).lower() if isinstance(split_res, (list, tuple)) else str(split_res).lower()
     df_raw = None
     
     # 1. Intentar lectura como Excel
@@ -127,7 +129,7 @@ def procesar_archivo_reporte(filepath):
 
         return [pd.DataFrame([row1, row2])]
 
-    # CASO B: Archivo grupal (logueos.jpg)
+    # CASO B: Archivo grupal
     blocks = []
     current_agent = None
     dates = []
@@ -219,7 +221,8 @@ def upload_file():
         return jsonify({"success": False, "message": "Por favor selecciona un archivo válido."}), 400
 
     filename = secure_filename(file.filename)
-    ext = os.path.splitext(filename)[1].lower()
+    split_res = os.path.splitext(filename)
+    ext = str(split_res[1]).lower() if isinstance(split_res, (list, tuple)) else str(split_res).lower()
     
     if ext not in ['.csv', '.xlsx', '.xls']:
         return jsonify({"success": False, "message": "Formato de archivo no permitido. Debe ser .csv, .xlsx o .xls."}), 400
@@ -260,7 +263,6 @@ def obtener_reporte():
         if not all_blocks:
             return jsonify({"success": False, "message": "No se pudieron procesar los datos de las planillas."})
 
-        # Desduplicar asesores manteniendo la última versión subida
         seen_advisors = set()
         dedup_blocks = []
         for block in reversed(all_blocks):
@@ -292,6 +294,317 @@ def obtener_reporte():
             "message": f"Error al procesar la consolidación: {str(e)}"
         }), 500
 
+def procesar_excel_calidad_detalle(filepath):
+    split_res = os.path.splitext(filepath)
+    ext = str(split_res[1]).lower() if isinstance(split_res, (list, tuple)) else str(split_res).lower()
+    df_raw = None
+    
+    if ext in ['.xlsx', '.xls']:
+        for engine in ['openpyxl', 'xlrd', None]:
+            try:
+                df_raw = pd.read_excel(filepath, sheet_name=0, header=None, engine=engine)
+                if df_raw is not None and not df_raw.empty:
+                    break
+            except Exception:
+                pass
+                
+    if df_raw is None or df_raw.empty:
+        for enc in ['utf-8', 'latin1', 'cp1252']:
+            try:
+                df_raw = pd.read_csv(filepath, sep=None, encoding=enc, header=None, engine='python')
+                if df_raw is not None and not df_raw.empty:
+                    break
+            except Exception:
+                pass
+
+    if df_raw is None or df_raw.empty:
+        return None
+
+    header_idx = None
+    for r_idx in range(min(20, len(df_raw))):
+        row_str = ' '.join([clean_str(x) for x in df_raw.iloc[r_idx].values]).upper()
+        if 'LEGAJO' in row_str and 'ASESOR' in row_str:
+            header_idx = r_idx
+            break
+
+    if header_idx is None:
+        return None
+
+    header_cols = [clean_str(x) for x in df_raw.iloc[header_idx].values]
+    df_data = df_raw.iloc[header_idx + 1:].copy()
+    df_data.columns = header_cols
+
+    df_data = df_data.dropna(how='all')
+    if df_data.empty:
+        return None
+
+    def formato_nota(val):
+        try:
+            num = float(str(val).replace('%', '').replace(',', '.').strip())
+            if num >= 85:
+                return f'<span class="badge-cumple">{num:.1f}%</span>'
+            else:
+                return f'<span class="badge-nocumple">{num:.1f}%</span>'
+        except Exception:
+            return clean_str(val)
+
+    if 'NOTA ENC' in df_data.columns:
+        df_data['NOTA ENC'] = df_data['NOTA ENC'].apply(formato_nota)
+
+    return df_data.fillna('---')
+
+@app.route('/upload_calidad_resumen', methods=['POST'])
+def upload_calidad_resumen():
+    if session.get('rol') and session.get('rol') != 'lider':
+        return jsonify({"success": False, "message": "Se requieren permisos de Líder."}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "No se adjuntó ningún archivo."}), 400
+
+    file = request.files['file']
+    if file.filename == '' or file.filename == '[object FileList]':
+        return jsonify({"success": False, "message": "Archivo no seleccionado o no válido."}), 400
+
+    try:
+        upload_dir = app.config.get('UPLOAD_FOLDER', 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(upload_dir, 'resumen_' + filename)
+        file.save(filepath)
+
+        split_res = os.path.splitext(filepath)
+        ext = str(split_res[1]).lower() if isinstance(split_res, (list, tuple)) else str(split_res).lower()
+        df_raw = None
+
+        # 1. Leer la solapa 'Consolidados por RAC'
+        if ext in ['.xlsx', '.xls', '.xlsm']:
+            try:
+                xl = pd.ExcelFile(filepath)
+                target_sheet = None
+                for sheet in xl.sheet_names:
+                    if 'CONSOLIDADOS POR RAC' in sheet.upper() or 'CONSOLIDADO' in sheet.upper():
+                        target_sheet = sheet
+                        break
+
+                if target_sheet is None and xl.sheet_names:
+                    target_sheet = xl.sheet_names[0]
+
+                if target_sheet:
+                    for engine in ['openpyxl', 'xlrd', None]:
+                        try:
+                            df_raw = pd.read_excel(filepath, sheet_name=target_sheet, header=None, engine=engine)
+                            if df_raw is not None and not df_raw.empty:
+                                break
+                        except Exception:
+                            continue
+            except Exception as e_xl:
+                print("Aviso al abrir libro Excel:", str(e_xl))
+
+        if df_raw is None or df_raw.empty:
+            for enc in ['utf-8', 'latin1', 'cp1252']:
+                for sep in [';', ',', '\t', None]:
+                    try:
+                        df_raw = pd.read_csv(filepath, sep=sep, encoding=enc, header=None, on_bad_lines='skip', engine='python')
+                        if df_raw is not None and not df_raw.empty and df_raw.shape[1] > 1:
+                            break
+                    except Exception:
+                        continue
+                if df_raw is not None and not df_raw.empty:
+                    break
+
+        if df_raw is None or df_raw.empty:
+            return jsonify({"success": False, "message": "No se encontraron datos en la hoja 'Consolidados por RAC'."}), 400
+
+        # 2. Localizar la fila de encabezados de la Tabla Principal
+        header_idx = None
+        for r_idx in range(len(df_raw)):
+            row_str = ' '.join([clean_str(x).upper() for x in df_raw.iloc[r_idx].values if pd.notna(x)])
+            if 'LEGAJO' in row_str and 'ASESOR' in row_str and ('LÍDER' in row_str or 'LIDER' in row_str):
+                header_idx = r_idx
+                break
+
+        if header_idx is None:
+            return jsonify({"success": False, "message": "No se encontró la tabla principal en la planilla."}), 400
+
+        raw_headers = [clean_str(x).upper() for x in df_raw.iloc[header_idx].values]
+        
+        # Mapear índices numéricos excluyendo Estado y 4º Monitoreo
+        idx_map = {}
+        for c_idx, h_text in enumerate(raw_headers):
+            if ('LÍDER' in h_text or 'LIDER' in h_text) and 'Líder' not in idx_map:
+                idx_map['Líder'] = c_idx
+            elif 'ASESOR' in h_text and 'Asesor' not in idx_map:
+                idx_map['Asesor'] = c_idx
+            elif '1' in h_text and 'MONITOREO' in h_text and '1º Monitoreo' not in idx_map:
+                idx_map['1º Monitoreo'] = c_idx
+            elif '2' in h_text and 'MONITOREO' in h_text and '2º Monitoreo' not in idx_map:
+                idx_map['2º Monitoreo'] = c_idx
+            elif '3' in h_text and 'MONITOREO' in h_text and '3º Monitoreo' not in idx_map:
+                idx_map['3º Monitoreo'] = c_idx
+            elif 'QM' in h_text and 'QM' not in idx_map:
+                idx_map['QM'] = c_idx
+            elif ('NOTA' in h_text or 'FINAL' in h_text) and 'Nota Final' not in idx_map:
+                idx_map['Nota Final'] = c_idx
+
+        # 3. Funciones auxiliares de formateo
+        def formatear_nota(num):
+            try:
+                val_num = float(num)
+                if val_num >= 85.0:
+                    return f'<span class="badge-cumple">{val_num:.2f}%</span>'
+                else:
+                    return f'<span class="badge-nocumple">{val_num:.2f}%</span>'
+            except Exception:
+                return '---'
+
+        def parse_float(val):
+            v_str = clean_str(val)
+            if not v_str or v_str.upper() in ['', 'NAN', 'NONE', '---', '#¡DIV/0!']:
+                return None
+            try:
+                num = float(v_str.replace('%', '').replace(',', '.').strip())
+                if 0 < num <= 1.0:
+                    num = num * 100
+                return num
+            except Exception:
+                return None
+
+        def parse_int(val):
+            v_str = clean_str(val)
+            if not v_str or v_str.upper() in ['', 'NAN', 'NONE', '---', '#¡DIV/0!']:
+                return 0
+            try:
+                return int(float(v_str.replace(',', '.').strip()))
+            except Exception:
+                return 0
+
+        # 4. Procesar la tabla de asesores
+        rows_asesores = []
+        lideres_definidos = [
+            'HERRERA FERNANDEZ, LEILA SABRINA',
+            'PARRA YAÑEZ, KARINA BEATRIZ'
+        ]
+
+        matrix_data = df_raw.iloc[header_idx + 1:].values
+
+        for row in matrix_data:
+            lider_val = clean_str(row[idx_map['Líder']]) if 'Líder' in idx_map and idx_map['Líder'] < len(row) else ''
+            asesor_val = clean_str(row[idx_map['Asesor']]) if 'Asesor' in idx_map and idx_map['Asesor'] < len(row) else ''
+
+            if asesor_val.upper() in ['', 'ASESOR', 'NAN', 'NONE', 'NONETYPE']:
+                continue
+
+            lider_coincide = None
+            for l_target in lideres_definidos:
+                if l_target.upper() in lider_val.upper():
+                    lider_coincide = l_target
+                    break
+
+            if lider_coincide:
+                m1_num = parse_float(row[idx_map['1º Monitoreo']]) if '1º Monitoreo' in idx_map else None
+                m2_num = parse_float(row[idx_map['2º Monitoreo']]) if '2º Monitoreo' in idx_map else None
+                m3_num = parse_float(row[idx_map['3º Monitoreo']]) if '3º Monitoreo' in idx_map else None
+                qm_num = parse_int(row[idx_map['QM']]) if 'QM' in idx_map else 0
+                nota_num = parse_float(row[idx_map['Nota Final']]) if 'Nota Final' in idx_map else None
+
+                rows_asesores.append({
+                    'Líder': lider_coincide,
+                    'Asesor': asesor_val,
+                    '1º Monitoreo': formatear_nota(m1_num) if m1_num is not None else '---',
+                    '2º Monitoreo': formatear_nota(m2_num) if m2_num is not None else '---',
+                    '3º Monitoreo': formatear_nota(m3_num) if m3_num is not None else '---',
+                    'QM': str(qm_num),
+                    'Nota Final': formatear_nota(nota_num) if nota_num is not None else '---',
+                    '_qm_raw': qm_num,
+                    '_nota_raw': nota_num
+                })
+
+        # 5. Calcular dinámicamente la Tabla Resumen (Team Leader, Monitoreos Totales y Promedios)
+        rows_tl = []
+        total_campana_qm = 0
+        notas_campana = []
+
+        for l_target in lideres_definidos:
+            asesores_lider = [r for r in rows_asesores if r['Líder'] == l_target]
+            sum_qm = sum(r['_qm_raw'] for r in asesores_lider)
+            notas_validas = [r['_nota_raw'] for r in asesores_lider if r['_nota_raw'] is not None]
+            prom_nota = (sum(notas_validas) / len(notas_validas)) if notas_validas else None
+
+            total_campana_qm += sum_qm
+            notas_campana.extend(notas_validas)
+
+            rows_tl.append({
+                'Team Leader': l_target,
+                'Monitoreos': str(sum_qm),
+                'TOTAL': formatear_nota(prom_nota) if prom_nota is not None else '---'
+            })
+
+        # Agregar Fila Total Campaña
+        prom_campana = (sum(notas_campana) / len(notas_campana)) if notas_campana else None
+        rows_tl.append({
+            'Team Leader': 'TOTAL CAMPAÑA',
+            'Monitoreos': str(total_campana_qm),
+            'TOTAL': formatear_nota(prom_campana) if prom_campana is not None else '---'
+        })
+
+        # Limpiar llaves temporales del listado de asesores
+        for r in rows_asesores:
+            r.pop('_qm_raw', None)
+            r.pop('_nota_raw', None)
+
+        # 6. Generar DataFrames y vistas HTML
+        cols_finales_asesor = ['Líder', 'Asesor', '1º Monitoreo', '2º Monitoreo', '3º Monitoreo', 'QM', 'Nota Final']
+        df_asesores = pd.DataFrame(rows_asesores, columns=cols_finales_asesor) if rows_asesores else pd.DataFrame(columns=cols_finales_asesor)
+
+        cols_finales_tl = ['Team Leader', 'Monitoreos', 'TOTAL']
+        df_tl = pd.DataFrame(rows_tl, columns=cols_finales_tl)
+
+        if not df_asesores.empty:
+            html_asesores = df_asesores.fillna('---').to_html(classes='table table-striped tabla-reporte', index=False, escape=False)
+        else:
+            html_asesores = '<p class="text-muted">No se encontraron registros de asesores para las líderes seleccionadas.</p>'
+
+        html_tl = df_tl.to_html(classes='table table-bordered tabla-tl-custom', index=False, escape=False)
+        html_tl_container = f'''
+        <style>
+            .tabla-tl-custom {{
+                border: 2px solid #000 !important;
+                text-align: center;
+                font-weight: bold;
+            }}
+            .tabla-tl-custom th {{
+                background-color: #F79646 !important;
+                color: white !important;
+                text-align: center !important;
+                border: 1px solid #000 !important;
+            }}
+            .tabla-tl-custom td {{
+                border: 1px solid #000 !important;
+                vertical-align: middle !important;
+            }}
+        </style>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 25px;">
+            <div style="min-width: 420px;">
+                {html_tl}
+            </div>
+        </div>
+        '''
+
+        return jsonify({
+            "success": True,
+            "message": "Planilla Resumen procesada correctamente.",
+            "html_tabla": html_tl_container + html_asesores
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "message": f"Detalle del error: {type(e).__name__} - {str(e)}"
+        }), 400
+
 if __name__ == '__main__':
     print("\n🚀 Servidor activo en http://127.0.0.1:5000\n")
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False)

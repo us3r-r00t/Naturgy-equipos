@@ -131,22 +131,33 @@ function cerrarLogin() {
     document.getElementById("password").value = "";
 }
 
+// Activar paneles de Líder en todas las pestañas al iniciar sesión
+function actualizarPanelesLider(rol) {
+    const esLider = (rol === "lider");
+    
+    const paneles = [
+        document.getElementById("leader-panel"),
+        document.getElementById("leader-panel-calidad-resumen"),
+        document.getElementById("leader-panel-calidad-detalle")
+    ];
+
+    paneles.forEach(panel => {
+        if (panel) {
+            panel.style.display = esLider ? "block" : "none";
+        }
+    });
+}
+
+// En la función validarAcceso(event), agregar la llamada a actualizarPanelesLider:
 function validarAcceso(event) {
     event.preventDefault();
 
     const usuarioInput = document.getElementById("usuario").value.trim();
     const passwordInput = document.getElementById("password").value.trim();
 
-    if (!usuarioInput || !passwordInput) {
-        alert("Por favor completa el usuario y la contraseña.");
-        return;
-    }
-
     fetch("/login", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             usuario: usuarioInput,
             password: passwordInput,
@@ -165,12 +176,8 @@ function validarAcceso(event) {
             document.getElementById("team-display").innerText = data.equipo;
             document.getElementById("role-display").innerText = data.rol.toUpperCase();
 
-            const leaderPanel = document.getElementById("leader-panel");
-            if (data.rol === "lider") {
-                leaderPanel.style.display = "block";
-            } else {
-                leaderPanel.style.display = "none";
-            }
+            // 🎯 Muestra u oculta los paneles de subida según el ROL
+            actualizarPanelesLider(data.rol);
 
             const firstTabBtn = document.querySelector('.tab-btn');
             cambiarPestana('nomina', { currentTarget: firstTabBtn });
@@ -178,16 +185,13 @@ function validarAcceso(event) {
             cargarNomina(data.equipo);
             cargarReporte();
             cargarInfoCampana(data.equipo);
-
         } else {
             alert("❌ Error: " + data.message);
         }
-    })
-    .catch(error => {
-        console.error("Error en la autenticación:", error);
-        alert("❌ Ocurrió un error de red al intentar iniciar sesión.");
     });
 }
+
+
 
 function cargarReporte() {
     const tableContainer = document.getElementById("table-container");
@@ -292,3 +296,161 @@ document.addEventListener("DOMContentLoaded", () => {
         aplicarTema(false);
     }
 });
+// Control de sub-pestañas internas en el módulo de Calidad
+function cambiarSubpestanaCalidad(subpestana, event) {
+    document.querySelectorAll('#tab-calidad .subtab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('#tab-calidad .subtab-content').forEach(content => content.classList.remove('active'));
+
+    const subtabTarget = document.getElementById('subtab-calidad-' + subpestana);
+    if (subtabTarget) {
+        subtabTarget.classList.add('active');
+    }
+
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+}
+
+// Carga del archivo Excel de Detalle de Calidad
+function subirArchivoCalidad() {
+    const fileInput = document.getElementById("excelCalidadFile");
+
+    if (!fileInput || fileInput.files.length === 0) {
+        alert("⚠️ Por favor selecciona un archivo Excel de Calidad antes de presionar subir.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    fetch("/upload_calidad", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ " + data.message);
+            fileInput.value = "";
+            const container = document.getElementById("table-calidad-detalle-container");
+            if (container && data.html_tabla) {
+                container.innerHTML = data.html_tabla;
+            }
+        } else {
+            alert("❌ Error: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error("Error al subir planilla de calidad:", error);
+        alert("❌ Ocurrió un error de comunicación al subir la planilla.");
+    });
+}
+
+// Mostrar el panel de líder en calidad si el usuario tiene rol 'lider'
+function actualizarPanelesLider(rol) {
+    const leaderPanelLogueos = document.getElementById("leader-panel");
+    const leaderPanelCalidad = document.getElementById("leader-panel-calidad");
+    
+    if (rol === "lider") {
+        if (leaderPanelLogueos) leaderPanelLogueos.style.display = "block";
+        if (leaderPanelCalidad) leaderPanelCalidad.style.display = "block";
+    } else {
+        if (leaderPanelLogueos) leaderPanelLogueos.style.display = "none";
+        if (leaderPanelCalidad) leaderPanelCalidad.style.display = "none";
+    }
+}
+// Subida de Planilla Resumen de Calidad
+function subirArchivoCalidadResumen() {
+    const fileInput = document.getElementById("excelCalidadResumenFile");
+
+    if (!fileInput || fileInput.files.length === 0) {
+        alert("⚠️ Por favor selecciona un archivo Excel para el Resumen de Calidad.");
+        return;
+    }
+
+    const formData = new FormData();
+    // 🎯 CORREGIDO: Enviar el primer archivo seleccionado (índice 0)
+    formData.append("file", fileInput.files[0]);
+
+    fetch("/upload_calidad_resumen", {
+        method: "POST",
+        body: formData
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Error en el servidor al procesar el archivo.");
+        }
+        return data;
+    })
+    .then(data => {
+        alert("✅ " + data.message);
+        fileInput.value = "";
+        const container = document.getElementById("table-calidad-resumen-container");
+        if (container && data.html_tabla) {
+            container.innerHTML = data.html_tabla;
+        }
+    })
+    .catch(error => {
+        console.error("Error al subir planilla resumen:", error);
+        alert("❌ Error: " + error.message);
+    });
+}
+
+function subirArchivoCalidadResumen() {
+    const fileInput = document.getElementById("excelCalidadResumenFile");
+
+    if (!fileInput || fileInput.files.length === 0) {
+        alert("⚠️ Por favor selecciona un archivo Excel para el Resumen de Calidad.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    fetch("/upload_calidad_resumen", {
+        method: "POST",
+        body: formData
+    })
+    .then(async response => {
+        const text = await response.text(); // Lee la respuesta como texto primero
+        try {
+            const data = JSON.parse(text);
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || "Error en el servidor.");
+            }
+            return data;
+        } catch (e) {
+            // Si no era un JSON válido, muestra el mensaje HTML de error
+            console.error("Respuesta completa del servidor:", text);
+            throw new Error("El servidor devolvió un error (Código " + response.status + "). Revisa la consola de Python.");
+        }
+    })
+    .then(data => {
+        alert("✅ " + data.message);
+        fileInput.value = "";
+        const container = document.getElementById("table-calidad-resumen-container");
+        if (container && data.html_tabla) {
+            container.innerHTML = data.html_tabla;
+        }
+    })
+    .catch(error => {
+        console.error("Error al subir planilla resumen:", error);
+        alert("❌ Error: " + error.message);
+    });
+}
+
+// Mostrar los paneles de carga si el rol es 'lider'
+function actualizarPanelesLider(rol) {
+    const panelesLider = [
+        document.getElementById("leader-panel"),
+        document.getElementById("leader-panel-calidad-resumen"),
+        document.getElementById("leader-panel-calidad-detalle")
+    ];
+
+    panelesLider.forEach(panel => {
+        if (panel) {
+            panel.style.display = (rol === "lider") ? "block" : "none";
+        }
+    });
+}
