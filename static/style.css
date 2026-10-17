@@ -486,3 +486,139 @@ tr:hover {
     outline: none;
     border-color: #002147;
 }
+/* ==========================================
+   ESTILOS PARA EL MODO OSCURO (DARK MODE)
+   ========================================== */
+
+/* Botón de alternancia en la cabecera */
+.btn-theme-toggle {
+    position: absolute;
+    top: 25px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.btn-theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.03);
+}
+
+.theme-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* Colores generales en Modo Oscuro */
+body.dark-mode {
+    background-color: #0f172a;
+    color: #f1f5f9;
+}
+
+body.dark-mode .card-equipo,
+body.dark-mode .panel-box,
+body.dark-mode .user-bar,
+body.dark-mode .modal-content,
+body.dark-mode .nomina-card {
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    color: #f8fafc;
+}
+
+body.dark-mode .card-equipo h2,
+body.dark-mode .panel-header-filter h3,
+body.dark-mode .modal-content h2,
+body.dark-mode .nomina-header h2,
+body.dark-mode .supervisor-title {
+    color: #38bdf8;
+}
+
+body.dark-mode .card-equipo p,
+body.dark-mode .placeholder-box,
+body.dark-mode label {
+    color: #94a3b8;
+}
+
+body.dark-mode .placeholder-box {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+/* Pestañas en Modo Oscuro */
+body.dark-mode .tabs-nav {
+    border-bottom-color: #38bdf8;
+}
+
+body.dark-mode .tab-btn {
+    background-color: #334155;
+    color: #cbd5e1;
+}
+
+body.dark-mode .tab-btn:hover {
+    background-color: #475569;
+    color: #ffffff;
+}
+
+body.dark-mode .tab-btn.active {
+    background-color: #0284c7;
+    color: #ffffff;
+}
+
+/* Tablas en Modo Oscuro */
+body.dark-mode th {
+    background-color: #0284c7;
+    color: #ffffff;
+    border-color: #334155;
+}
+
+body.dark-mode td {
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark-mode tr:nth-child(even) {
+    background-color: #0f172a;
+}
+
+body.dark-mode tr:hover {
+    background-color: #1e293b;
+}
+
+body.dark-mode .tabla-nomina th {
+    background-color: #0f172a;
+    color: #38bdf8;
+    border-color: #334155;
+}
+
+/* Selectores de Mes e Inputs en Modo Oscuro */
+body.dark-mode .filter-group {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+body.dark-mode .select-mes,
+body.dark-mode .modal input {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode .close {
+    color: #94a3b8;
+}
+
+body.dark-mode .close:hover {
+    color: #ffffff;
+}

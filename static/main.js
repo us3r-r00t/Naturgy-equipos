@@ -254,3 +254,41 @@ function cerrarSesion() {
         document.getElementById("equipo-section").style.display = "flex";
     });
 }
+// ==========================================
+// CONTROL DEL MODO OSCURO (DARK MODE)
+// ==========================================
+
+function aplicarTema(esOscuro) {
+    const sunIcon = document.getElementById("theme-icon-sun");
+    const moonIcon = document.getElementById("theme-icon-moon");
+    const themeText = document.getElementById("theme-toggle-text");
+
+    if (esOscuro) {
+        document.body.classList.add("dark-mode");
+        if (sunIcon) sunIcon.style.display = "inline";
+        if (moonIcon) moonIcon.style.display = "none";
+        if (themeText) themeText.innerText = "Modo Claro";
+        localStorage.setItem("naturgy_theme", "dark");
+    } else {
+        document.body.classList.remove("dark-mode");
+        if (sunIcon) sunIcon.style.display = "none";
+        if (moonIcon) moonIcon.style.display = "inline";
+        if (themeText) themeText.innerText = "Modo Oscuro";
+        localStorage.setItem("naturgy_theme", "light");
+    }
+}
+
+function toggleDarkMode() {
+    const esOscuroActual = document.body.classList.contains("dark-mode");
+    aplicarTema(!esOscuroActual);
+}
+
+// Cargar preferencia guardada al iniciar la página
+document.addEventListener("DOMContentLoaded", () => {
+    const temaGuardado = localStorage.getItem("naturgy_theme");
+    if (temaGuardado === "dark") {
+        aplicarTema(true);
+    } else {
+        aplicarTema(false);
+    }
+});
