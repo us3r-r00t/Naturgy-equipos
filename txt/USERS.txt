@@ -1,6 +1,19 @@
-Resumen de Credenciales para Pruebas:
-NATURGY BAN CAU: operador_bancau / BanCau2026*
-NATURGY NOA CAU: operador_noacau / NoaCau2026*
-NATURGY ENERGIA SAN JUAN: operador_sanjuan / SanJuan2026*
-Líderes (Gestión total): kparra / admin2026 o lherrera / admin2026
- 
+FLASK_SECRET_KEY=clave_desarrollo_local_2026
+
+# Contraseñas Líderes
+PASS_KPARRA=Adminkary2026!
+PASS_LHERRERA=Adminlei2026!
+
+# Contraseñas Asesores
+PASS_MQUINTANA=OperMeli2026*
+PASS_AESCOBAR=OperAri2026*
+PASS_LGANINO=OperLucho2026*
+PASS_AHERBAS=OperAle2026*
+PASS_FRIOS=OperFran2026*
+PASS_CARCE=OperCande2026*
+PASS_ARIOS=OperAxel2026*
+PASS_FRUIZ=OperFlor2026*
+PASS_VGARCIA=OperVicky2026*
+PASS_NBOGADO=OperNadu026*
+PASS_VGONZALEZ=OperVane2026*
+PASS_SGONZALEZ=OperSan2026*
