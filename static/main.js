@@ -1,13 +1,31 @@
 //controllers
 
 document.addEventListener('DOMContentLoaded', () => {
-    obtenerReporteGuardado();
+    verificarSesion();
 
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', login);
     }
 });
+
+async function verificarSesion() {
+    try {
+        const res = await fetch('/obtener_reporte');
+        if (res.status === 401) {
+            return;
+        }
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('tablaContent').innerHTML = data.html_tabla;
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('appSection').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'block';
+        }
+    } catch (err) {
+        // En caso de fallo de red, se mantiene la vista inicial
+    }
+}
 
 async function login(e) {
     e.preventDefault();
@@ -28,6 +46,8 @@ async function login(e) {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('appSection').style.display = 'block';
             document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('loginError').innerText = '';
+            await obtenerReporteGuardado();
         } else {
             document.getElementById('loginError').innerText = data.message;
         }
@@ -61,6 +81,12 @@ async function procesarArchivo() {
             body: formData
         });
 
+        if (res.status === 401) {
+            status.innerText = "Sesión expirada. Por favor inicie sesión nuevamente.";
+            location.reload();
+            return;
+        }
+
         const data = await res.json();
         if (data.success) {
             status.innerText = data.message;
@@ -76,11 +102,14 @@ async function procesarArchivo() {
 async function obtenerReporteGuardado() {
     try {
         const res = await fetch('/obtener_reporte');
+        if (res.status === 401) {
+            return;
+        }
         const data = await res.json();
         if (data.success) {
             document.getElementById('tablaContent').innerHTML = data.html_tabla;
         }
     } catch (err) {
-        console.log("No hay reportes previos o el usuario no está logueado.");
+        console.log("No hay reportes previos o error al consultar.");
     }
-}
+}
