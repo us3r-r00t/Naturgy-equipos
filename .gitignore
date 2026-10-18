@@ -1,0 +1,23 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.cpython-*.pyc
+
+# Ambientes virtuales
+venv/
+.venv/
+env/
+
+# Base de datos SQLite
+*.db
+*.sqlite3
+
+# Linters y pruebas
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Archivos de entorno local
+.env
