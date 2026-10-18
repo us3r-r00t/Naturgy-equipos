@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, jsonify, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from db import get_db
 
 auth_bp = Blueprint('auth', __name__)
@@ -9,25 +11,44 @@ def login():
     usuario_input = data.get('usuario', '').strip()
     password_input = data.get('password', '').strip()
 
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Consulta SQL directa parametrizada
-    cursor.execute(
-        "SELECT * FROM usuarios WHERE username = ? AND password = ?",
-        (usuario_input, password_input)
-    )
-    user = cursor.fetchone()
-    conn.close()
-
-    if user:
-        session['usuario'] = user['username']
-        session['rol'] = user['rol']
+    if not usuario_input or not password_input:
         return jsonify({
-            'success': True,
-            'usuario': user['username'],
-            'rol': user['rol']
-        })
+            'success': False,
+            'message': 'Usuario o contraseña no proporcionados.'
+        }), 400
+
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM usuarios WHERE username = ?",
+            (usuario_input,)
+        )
+        user = cursor.fetchone()
+
+        if user:
+            # Soporta verificación por hash y migración transparente de passwords legacy en texto plano
+            is_valid = False
+            if user['password'].startswith(('scrypt:', 'pbkdf2:')):
+                is_valid = check_password_hash(user['password'], password_input)
+            elif user['password'] == password_input:
+                is_valid = True
+                cursor.execute(
+                    "UPDATE usuarios SET password = ? WHERE id = ?",
+                    (generate_password_hash(password_input), user['id'])
+                )
+                conn.commit()
+
+            if is_valid:
+                session['usuario'] = user['username']
+                session['rol'] = user['rol']
+                return jsonify({
+                    'success': True,
+                    'usuario': user['username'],
+                    'rol': user['rol']
+                })
+    finally:
+        conn.close()
 
     return jsonify({
         'success': False,
@@ -37,4 +58,4 @@ def login():
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
-    return jsonify({'success': True})
+    return jsonify({'success': True})
